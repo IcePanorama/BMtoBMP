@@ -3,22 +3,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-FILE *load_file (const char *filename);
+static FILE *load_file (const char *filename);
 
 int
 main (void)
 {
   const char *bm_filename = "AUTOGRPH.BM";
+  // const char *bm_filename = "CURATOR1.BM";
   const char *pal_filename = "AUTOGRPH.PAL";
 
   FILE *bm_file = load_file (bm_filename);
   FILE *pal_file = load_file (pal_filename);
 
-  BMtoBMP_convert_image (bm_file, pal_file, "output");
+  if (BMtoBMP_convert_image (bm_file, pal_file, "output") != 0)
+    {
+      fclose (bm_file);
+      fclose (pal_file);
+      exit (1);
+    }
 
   fclose (bm_file);
   fclose (pal_file);
-
   return 0;
 }
 
