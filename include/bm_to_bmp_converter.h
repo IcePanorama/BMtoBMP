@@ -126,9 +126,9 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
       goto clean_up;
     }
 
-  for (uint32_t j = 0; j < img->height; j++)
+  for (uint32_t i = 0; i < img->height; i++)
     {
-      for (uint32_t i = 0; i < img->width; i++)
+      for (uint32_t j = 0; j < img->width; j++)
         {
           /* Get PAL offset from BM file. */
           uint8_t offset;
@@ -156,10 +156,10 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
                 }
             }
 
-          const uint32_t j_reversed = (img->height - 1 - j);
-          img->data[(j_reversed * img->width + i) * 3] = color_data[0];
-          img->data[(j_reversed * img->width + i) * 3 + 1] = color_data[1];
-          img->data[(j_reversed * img->width + i) * 3 + 2] = color_data[2];
+          const uint32_t i_reversed = (img->height - 1 - i);
+          img->data[(i_reversed * img->width + j) * 3] = color_data[0];
+          img->data[(i_reversed * img->width + j) * 3 + 1] = color_data[1];
+          img->data[(i_reversed * img->width + j) * 3 + 2] = color_data[2];
         }
     }
 
@@ -229,7 +229,11 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
   // Recalculating pixel data size as padding may have been applied.
   for (uint32_t i = 0; i < img.width * img.height * BYTES_PER_PIXEL; i++)
     {
-      write_le_int8_to_file (output, img.data[i]);
+      if (write_le_int8_to_file (output, img.data[i]) != 0)
+        {
+          fclose (output);
+          goto clean_up;
+        }
     }
 
   fclose (output);
