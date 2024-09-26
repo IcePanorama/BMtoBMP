@@ -47,7 +47,7 @@ add_custom_target(format
 
 # Test target
 add_custom_target(test
-    COMMAND valgrind --leak-check=yes ./${PROJECT_NAME}
+    COMMAND valgrind --leak-check=yes ./${PROJECT_NAME} AUTOGRPH.BM AUTOGRPH.PAL
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Testing for memory leaks with Valgrind."
 )
