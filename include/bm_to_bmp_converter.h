@@ -6,16 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BYTES_PER_PIXEL (3) // 24 bpp
-#define OUTPUT_FILENAME_MAX_LEN (256)
-#define DPI (96)
+#define BMtoBMP_BYTES_PER_PIXEL (3) // 24-bits-per-pixel
+#define BMtoBMP_OUTPUT_FILENAME_MAX_LEN (256)
+#define BMtoBMP_DPI (96)
 
-typedef struct BitmapImage_s
+typedef struct BMtoBMP_BitmapImage_s
 {
   uint32_t width;
   uint32_t height;
+  uint32_t row_size;
   uint8_t *data;
-} BitmapImage_t;
+} BMtoBMP_BitmapImage_t;
 
 static int8_t
 read_uint32_from_file (FILE *fptr, uint32_t *output)
@@ -105,7 +106,7 @@ write_string_to_file (FILE *fptr, const char *s, size_t s_len)
 }
 
 static int8_t
-process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
+process_image (FILE *bm_file, FILE *pal_file, BMtoBMP_BitmapImage_t *img)
 {
   if (read_uint32_from_file (bm_file, &img->width) != 0
       || read_uint32_from_file (bm_file, &img->height) != 0)
@@ -113,20 +114,20 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
       return -1;
     }
 
-  img->data
-      = calloc (img->width * img->height * BYTES_PER_PIXEL, sizeof (uint8_t));
+  img->row_size = ((img->width * 3 + 3) & ~3);
+  img->data = calloc (img->row_size * img->height, sizeof (uint8_t));
   if (img->data == NULL)
     {
       fprintf (stderr,
                "[BMtoBMP] calloc error: unable to allocate image buffer of "
                "size, %dx%dx%d.\n",
-               img->height, img->width, BYTES_PER_PIXEL * 8);
+               img->height, img->width, BMtoBMP_BYTES_PER_PIXEL * 8);
       goto clean_up;
     }
 
-  for (uint32_t i = 0; i < img->height; i++)
+  for (uint32_t i = 0x0; i < img->height; i++)
     {
-      for (uint32_t j = 0; j < img->width; j++)
+      for (uint32_t j = 0x0; j < img->width; j++)
         {
           /* Get PAL offset from BM file. */
           uint8_t offset;
@@ -155,11 +156,19 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
             }
 
           const uint32_t i_reversed = (img->height - 1 - i);
+
           /* Data must be in LE order so it actually goes BGR, not RGB. */
-          img->data[(i_reversed * img->width + j) * 3] = color_data[2];
-          img->data[(i_reversed * img->width + j) * 3 + 1] = color_data[1];
-          img->data[(i_reversed * img->width + j) * 3 + 2] = color_data[0];
+          img->data[(i_reversed * img->row_size) + (j * 3)] = color_data[2];
+          img->data[(i_reversed * img->row_size) + (j * 3) + 1]
+              = color_data[1];
+          img->data[(i_reversed * img->row_size) + (j * 3) + 2]
+              = color_data[0];
         }
+
+      // Skip padding after reading each row
+      fseek (bm_file, img->row_size - img->width * 3, SEEK_CUR);
+
+      // printf ("%ld\n", ftell (bm_file));
     }
 
   return 0;
@@ -172,17 +181,18 @@ int8_t
 BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
                        char const output_filename[static 1])
 {
-  BitmapImage_t img;
+  BMtoBMP_BitmapImage_t img;
   if (process_image (bm_file, pal_file, &img) != 0)
     return -1;
 
-  if (strlen (output_filename) + strlen (".bmp") + 1 > OUTPUT_FILENAME_MAX_LEN)
+  if (strlen (output_filename) + strlen (".bmp") + 1
+      > BMtoBMP_OUTPUT_FILENAME_MAX_LEN)
     {
       fprintf (stderr, "[BMtoBMP] output filename is too long.\n");
       goto clean_up;
     }
 
-  char filename[OUTPUT_FILENAME_MAX_LEN];
+  char filename[BMtoBMP_OUTPUT_FILENAME_MAX_LEN];
   strcpy (filename, output_filename);
   strcat (filename, ".bmp");
 
@@ -197,12 +207,16 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
   // Make sure we're at the beginning of the file
   fseek (output, 0x0, SEEK_SET);
 
-  uint32_t pixel_data_size = (img.width * img.height * BYTES_PER_PIXEL);
+  uint32_t pixel_data_size
+      = (img.row_size * img.height * BMtoBMP_BYTES_PER_PIXEL);
+  /*
   const uint32_t padding = (4 - (pixel_data_size % 4)) % 4;
   pixel_data_size += padding;
+  */
   const uint32_t output_file_size = 54 + pixel_data_size;
 
-  const int32_t ppm_resolution = (int32_t)(DPI * 39.37); // pixel per meter
+  const int32_t ppm_resolution
+      = (int32_t)(BMtoBMP_DPI * 39.37); // pixel per meter
 
   if (write_string_to_file (output, "BM", 2) != 0 // file signature
       || write_le_int32_to_file (output, output_file_size) != 0
@@ -212,7 +226,7 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
       || write_le_int32_to_file (output, img.width) != 0
       || write_le_int32_to_file (output, img.height) != 0
       || write_le_int16_to_file (output, 0x1) != 0 // num color planes
-      || write_le_int16_to_file (output, BYTES_PER_PIXEL * 8) != 0
+      || write_le_int16_to_file (output, BMtoBMP_BYTES_PER_PIXEL * 8) != 0
       || write_le_int32_to_file (output, 0x0) != 0 // no compression
       || write_le_int32_to_file (output, pixel_data_size) != 0
       || write_le_int32_to_file (output, ppm_resolution) // horizontal
@@ -226,7 +240,7 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
     }
 
   // Recalculating pixel data size as padding may have been applied.
-  for (uint32_t i = 0; i < img.width * img.height * BYTES_PER_PIXEL; i++)
+  for (uint32_t i = 0; i < img.row_size * img.height; i++)
     {
       if (write_le_int8_to_file (output, img.data[i]) != 0)
         {
