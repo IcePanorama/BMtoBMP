@@ -1,3 +1,11 @@
+# Project specifics
+BMtoBMP
+*.BM
+*.PAL
+*.bm
+*.pal
+build/*
+
 # Prerequisites
 *.d
 
