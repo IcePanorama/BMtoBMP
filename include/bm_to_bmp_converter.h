@@ -126,9 +126,9 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
       goto clean_up;
     }
 
-  for (uint32_t i = 0; i < img->width; i++)
+  for (uint32_t j = 0; j < img->height; j++)
     {
-      for (uint32_t j = 0; j < img->height; j++)
+      for (uint32_t i = 0; i < img->width; i++)
         {
           /* Get PAL offset from BM file. */
           uint8_t offset;
@@ -142,7 +142,7 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
             }
 
           /* Read color data from PAL file using offset. */
-          fseek (pal_file, offset, SEEK_SET);
+          fseek (pal_file, offset * 3, SEEK_SET);
           uint8_t color_data[3] = { 0 };
           for (uint8_t k = 0; k < 3; k++)
             {
@@ -156,9 +156,10 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
                 }
             }
 
-          img->data[(i * img->height + j) * 3] = color_data[0];
-          img->data[(i * img->height + j) * 3 + 1] = color_data[1];
-          img->data[(i * img->height + j) * 3 + 2] = color_data[2];
+          const uint32_t j_reversed = (img->height - 1 - j);
+          img->data[(j_reversed * img->width + i) * 3] = color_data[0];
+          img->data[(j_reversed * img->width + i) * 3 + 1] = color_data[1];
+          img->data[(j_reversed * img->width + i) * 3 + 2] = color_data[2];
         }
     }
 
