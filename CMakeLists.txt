@@ -29,6 +29,7 @@ set(CODE_STYLE GNU)
 
 set(INCL_DIR "${PROJECT_SOURCE_DIR}/include")
 set(INCL_FILES
+    "${INCL_DIR}/bm_to_bmp_converter.h"
 )
 
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")

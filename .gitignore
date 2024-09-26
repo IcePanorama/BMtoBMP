@@ -5,6 +5,8 @@ BMtoBMP
 *.bm
 *.pal
 build/*
+compile_commands.json
+.cache/*
 
 # Prerequisites
 *.d

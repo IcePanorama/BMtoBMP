@@ -1,3 +1,5 @@
+#include "bm_to_bmp_converter.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,6 +13,8 @@ main (void)
 
   FILE *bm_file = load_file (bm_filename);
   FILE *pal_file = load_file (pal_filename);
+
+  BMtoBMP_convert_image (bm_file, pal_file); //, "output");
 
   fclose (bm_file);
   fclose (pal_file);
