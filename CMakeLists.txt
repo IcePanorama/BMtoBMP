@@ -44,6 +44,21 @@ add_custom_target(format
     COMMENT "Auto-formatting code."
 )
 
+# Test target
+add_custom_target(test
+    COMMAND valgrind --leak-check=yes ./${PROJECT_NAME}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Testing for memory leaks with Valgrind."
+)
+
+# `full` target
+add_custom_target(full
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target clean
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target ${PROJECT_NAME}
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target test
+    COMMENT "Running full build (clean, format, build, and test)."
+)
+
 # Default/All target
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 add_dependencies(${PROJECT_NAME} format)
