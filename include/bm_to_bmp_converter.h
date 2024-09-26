@@ -155,6 +155,7 @@ process_image (FILE *bm_file, FILE *pal_file, BitmapImage_t *img)
             }
 
           const uint32_t i_reversed = (img->height - 1 - i);
+          /* Data must be in LE order so it actually goes BGR, not RGB. */
           img->data[(i_reversed * img->width + j) * 3] = color_data[2];
           img->data[(i_reversed * img->width + j) * 3 + 1] = color_data[1];
           img->data[(i_reversed * img->width + j) * 3 + 2] = color_data[0];
