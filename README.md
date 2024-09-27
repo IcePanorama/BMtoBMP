@@ -38,7 +38,7 @@ BMtoBMP_i686.exe path\to\file.BM path\to\file.PAL # 32-bit Windows Systems
 
 ## Usage as a library
 
-Debug error output can be enabled by compiling with the `-DBMtoBMP_DEBUG_OUTPUT` flag.
+Debug error output messages can be enabled by compiling with the `-DBMtoBMP_DEBUG_OUTPUT` flag.
 
 ### Overview:
 This library provides functionality to convert BM image files to standard 24-bit BMP images, using an accompanying PAL file to map pixel values to RGB colors.
