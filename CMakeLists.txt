@@ -22,6 +22,7 @@ add_compile_options(
     -Wstringop-overflow=4
     -Wshadow
     -fanalyzer
+    -DBMtoBMP_DEBUG_OUTPUT
 )
 
 set(AUTO_FMT clang-format)

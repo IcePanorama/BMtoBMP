@@ -25,10 +25,12 @@ allocate_img_data (BMtoBMP_BitmapImage_t *img)
   img->data = (uint8_t **)calloc (img->height, sizeof (uint8_t *));
   if (img->data == NULL)
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr,
                "[BMtoBMP] calloc error: unable to allocate image buffer of "
                "size, %dx%dx%d.\n",
                img->height, img->width, BMtoBMP_BYTES_PER_PIXEL * 8);
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return;
     }
 
@@ -73,8 +75,10 @@ read_uint32_from_file (FILE *fptr, uint32_t *output)
   size_t bytes_read = fread (bytes, sizeof (uint8_t), 4, fptr);
   if (bytes_read != 4)
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr, "[BMtoBMP] fread error: read %zu bytes, expected %d.\n",
                bytes_read, 4);
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return -1;
     }
 
@@ -99,8 +103,10 @@ write_le_int32_to_file (FILE *fptr, uint32_t x)
   if (fwrite (&bytes, sizeof (uint8_t), sizeof (bytes), fptr)
       != sizeof (bytes))
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr,
                "[BMtoBMP] fwrite error: failed to write le int32 to file.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return -1;
     }
 
@@ -120,8 +126,10 @@ write_le_int16_to_file (FILE *fptr, uint16_t x)
   if (fwrite (&bytes, sizeof (uint8_t), sizeof (bytes), fptr)
       != sizeof (bytes))
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr,
                "[BMtoBMP] fwrite error: failed to write le uint16 to file.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return -1;
     }
 
@@ -133,8 +141,10 @@ write_le_int8_to_file (FILE *fptr, uint8_t x)
 {
   if (fwrite (&x, sizeof (uint8_t), sizeof (x), fptr) != sizeof (x))
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr,
                "[BMtoBMP] fwrite error: failed to write le uint16 to file.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return -1;
     }
 
@@ -146,8 +156,10 @@ write_string_to_file (FILE *fptr, const char *s, size_t s_len)
 {
   if (fwrite (s, sizeof (char), s_len, fptr) != s_len)
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr,
                "[BMtoBMP] fwrite error: failed to write string to file.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return -1;
     }
   return 0;
@@ -168,9 +180,11 @@ process_image (FILE *bm_file, FILE *pal_file, BMtoBMP_BitmapImage_t *img)
           size_t bytes_read = fread (&offset, sizeof (uint8_t), 1, bm_file);
           if (bytes_read != 1)
             {
+#ifdef BMtoBMP_DEBUG_OUTPUT
               fprintf (
                   stderr,
                   "[BMtoBMP] fread error: error reading data from BM file.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
               return -1;
             }
 
@@ -183,8 +197,10 @@ process_image (FILE *bm_file, FILE *pal_file, BMtoBMP_BitmapImage_t *img)
                   = fread (&color_data[k], sizeof (uint8_t), 1, pal_file);
               if (bytes_read != 1)
                 {
+#ifdef BMtoBMP_DEBUG_OUTPUT
                   fprintf (stderr, "[BMtoBMP] fread error: error reading data "
                                    "from PAL file.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
                   return -1;
                 }
             }
@@ -222,7 +238,9 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
   /* len(".BMP\0") = 5 */
   if (strlen (output_filename) + 5 > BMtoBMP_OUTPUT_FILENAME_MAX_LEN)
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr, "[BMtoBMP] output filename is too long.\n");
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       return -1;
     }
 
@@ -239,8 +257,10 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
   FILE *output = fopen (img.filename, "wb");
   if (output == NULL)
     {
+#ifdef BMtoBMP_DEBUG_OUTPUT
       fprintf (stderr, "[BMtoBMP] fopen error: could not create file, %s.\n",
                img.filename);
+#endif /* BMtoBMP_DEBUG_OUTPUT */
       goto clean_up;
     }
 
@@ -252,6 +272,7 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
   const uint32_t output_file_size = 54 + pixel_data_size;
   const int32_t ppm_resolution = 0x0B13; // pixel per meter
 
+  /* Populate bitmap file header. (BITMAPINFOHEADER) */
   if (write_string_to_file (output, "BM", 2) != 0 // file signature
       || write_le_int32_to_file (output, output_file_size) != 0
       || write_le_int32_to_file (output, 0x0) != 0  // Reserved
@@ -273,6 +294,7 @@ BMtoBMP_convert_image (FILE *bm_file, FILE *pal_file,
       goto clean_up;
     }
 
+  /* Output image data to file. */
   const uint32_t padding = (4 - (img.width * BMtoBMP_BYTES_PER_PIXEL) % 4) % 4;
   for (uint32_t i = 0; i < img.height; i++)
     {
