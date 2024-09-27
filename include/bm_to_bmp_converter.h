@@ -17,7 +17,7 @@
  *  BMtoBMP - A header-only library for converting BM image files to BMP format
  *  using PAL files.
  *
- *  Debug error output can be enabled by compiling with the
+ *  Debug error output messages can be enabled by compiling with the
  *  `-DBMtoBMP_DEBUG_OUTPUT` flag.
  *
  *  Overview:
